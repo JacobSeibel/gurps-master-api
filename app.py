@@ -1,10 +1,12 @@
 from flask import Flask, request
+from flask_cors import CORS, cross_origin
 import os
 import psycopg2
 import psycopg2.extras
 from dotenv import load_dotenv
 
 app = Flask(__name__)
+cors = CORS(app)
 
 load_dotenv()
 
@@ -21,6 +23,7 @@ except:
 
 cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
+@cross_origin()
 @app.route('/character')
 @app.route('/character/<id>')
 def character(id=None):

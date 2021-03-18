@@ -49,21 +49,40 @@ point_value,
 available_points
 """
 
+LANGUAGE_JOIN = "language on language.character_fk = character.id"
 LANGUAGE_COLUMNS = """
 language.id as language_id,
 language.name as language_name,
-spoken_comprehension,
-written_comprehension
+language.spoken_comprehension as language_spoken_comprehension,
+language.written_comprehension as language_written_comprehension
+"""
+
+REPUTATION_JOIN = "reputation on reputation.character_fk = character.id"
+REPUTATION_COLUMNS = """
+reputation.id as reputation_id,
+reputation.description as reputation_description,
+reputation.reaction as reputation_reaction,
+reputation.scope as reputation_scope,
+reputation.group as reputation_group,
+reputation.frequency as reputation_frequency,
+reputation.free as reputation_free
 """
 
 # SQL Queries
 SELECT_ALL_CHARACTERS = """
 select 
     {CHARACTER_COLUMNS},
-    {LANGUAGE_COLUMNS}
+    {LANGUAGE_COLUMNS},
+    {REPUTATION_COLUMNS}
 from character
-join language on language.character_fk = character.id
-""".format(CHARACTER_COLUMNS = CHARACTER_COLUMNS, LANGUAGE_COLUMNS = LANGUAGE_COLUMNS)
+join {LANGUAGE_JOIN}
+join {REPUTATION_JOIN}
+""".format(
+    CHARACTER_COLUMNS = CHARACTER_COLUMNS,
+    LANGUAGE_COLUMNS = LANGUAGE_COLUMNS,
+    REPUTATION_COLUMNS = REPUTATION_COLUMNS,
+    LANGUAGE_JOIN = LANGUAGE_JOIN,
+    REPUTATION_JOIN = REPUTATION_JOIN)
 SELECT_CHARACTER_BY_ID = SELECT_ALL_CHARACTERS + """ where character.id=%s"""
 
 try:
@@ -78,10 +97,12 @@ def appendIfNotPresent(list, append):
         if list:
             exists = False
             for item in list:
-                exists = exists and (item['id'] == append['id'])
+                if item['id'] == append['id']:
+                    exists = True
+                    break
             if not exists:
                 list.append(append)
-                return list
+            return list
         else:
             return [append]
 
@@ -117,14 +138,26 @@ def buildCharacter(characterData):
     character['pointValue'] = d.get('point_value')
     character['availablePoints'] = d.get('available_points')
     character['languages'] = []
+    character['reputations'] = []
     for c in characterData:
         language = {
             "id": c.get('language_id'),
             "name": c.get('language_name'),
-            "spokenComprehension": c.get('spoken_comprehension'),
-            "writtenComprehension": c.get('written_comprehension')
+            "spokenComprehension": c.get('language_spoken_comprehension'),
+            "writtenComprehension": c.get('language_written_comprehension')
         }
         character['languages'] = appendIfNotPresent(character['languages'], language)
+
+        reputation = {
+            "id": c.get('reputation_id'),
+            "description": c.get('reputation_description'),
+            "reaction": c.get('reputation_reaction'),
+            "scope": c.get('reputation_scope'),
+            "group": c.get('reputation_group'),
+            "frequency": c.get('reputation_frequency'),
+            "free": c.get('reputation_free')
+        }
+        character['reputations'] = appendIfNotPresent(character['reputations'], reputation)
     return character
 
 

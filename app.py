@@ -178,7 +178,7 @@ def buildCharacter(characterData):
             "organization": c.get('rank_organization'),
             "rank": c.get('rank_rank'),
             "description": c.get('rank_description'),
-            "replaces_status": c.get('rank_replaces_status')
+            "replacesStatus": c.get('rank_replaces_status')
         }
         character['ranks'] = appendIfNotPresent(character['ranks'], rank)
     return character

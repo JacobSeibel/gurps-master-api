@@ -68,21 +68,34 @@ reputation.frequency as reputation_frequency,
 reputation.free as reputation_free
 """
 
+RANK_JOIN = "rank on rank.character_fk = character.id"
+RANK_COLUMNS = """
+rank.id as rank_id,
+rank.organization as rank_organization,
+rank.rank as rank_rank,
+rank.description as rank_description,
+rank.replaces_status as rank_replaces_status
+"""
+
 # SQL Queries
 SELECT_ALL_CHARACTERS = """
 select 
     {CHARACTER_COLUMNS},
     {LANGUAGE_COLUMNS},
-    {REPUTATION_COLUMNS}
+    {REPUTATION_COLUMNS},
+    {RANK_COLUMNS}
 from character
 join {LANGUAGE_JOIN}
 join {REPUTATION_JOIN}
+join {RANK_JOIN}
 """.format(
     CHARACTER_COLUMNS = CHARACTER_COLUMNS,
     LANGUAGE_COLUMNS = LANGUAGE_COLUMNS,
     REPUTATION_COLUMNS = REPUTATION_COLUMNS,
+    RANK_COLUMNS = RANK_COLUMNS,
     LANGUAGE_JOIN = LANGUAGE_JOIN,
-    REPUTATION_JOIN = REPUTATION_JOIN)
+    REPUTATION_JOIN = REPUTATION_JOIN,
+    RANK_JOIN = RANK_JOIN)
 SELECT_CHARACTER_BY_ID = SELECT_ALL_CHARACTERS + """ where character.id=%s"""
 
 try:
@@ -139,6 +152,7 @@ def buildCharacter(characterData):
     character['availablePoints'] = d.get('available_points')
     character['languages'] = []
     character['reputations'] = []
+    character['ranks'] = []
     for c in characterData:
         language = {
             "id": c.get('language_id'),
@@ -158,6 +172,15 @@ def buildCharacter(characterData):
             "free": c.get('reputation_free')
         }
         character['reputations'] = appendIfNotPresent(character['reputations'], reputation)
+
+        rank = {
+            "id": c.get('rank_id'),
+            "organization": c.get('rank_organization'),
+            "rank": c.get('rank_rank'),
+            "description": c.get('rank_description'),
+            "replaces_status": c.get('rank_replaces_status')
+        }
+        character['ranks'] = appendIfNotPresent(character['ranks'], rank)
     return character
 
 

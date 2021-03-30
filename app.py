@@ -11,6 +11,7 @@ cors = CORS(app)
 
 load_dotenv()
 
+DATABASE_URL = os.getenv("DATABASE_URL")
 DB_HOST = os.getenv("DB_HOST")
 DB_USER = os.getenv("DB_USER")
 DB_PASSWORD = os.getenv("DB_PASSWORD")
@@ -108,7 +109,11 @@ join {RANK_JOIN}
 SELECT_CHARACTER_BY_ID = SELECT_ALL_CHARACTERS + """ where character.id=%s"""
 
 try:
-    conn = psycopg2.connect(host=DB_HOST, port=DB_PORT, user=DB_USER, password=DB_PASSWORD, dbname=DB_NAME)
+    if DATABASE_URL != "":
+        conn = psycopg2.connect(DATABASE_URL)
+        print("Test")
+    else:
+        conn = psycopg2.connect(host=DB_HOST, port=DB_PORT, user=DB_USER, password=DB_PASSWORD, dbname=DB_NAME)
 except:
     print("I am unable to connect to the database.")
 

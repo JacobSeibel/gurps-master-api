@@ -24,8 +24,6 @@ character.name,
 player,
 height,
 weight,
-appearance_description,
-appearance,
 build,
 size,
 st,
@@ -37,16 +35,23 @@ hp,
 will,
 per,
 fp,
-androgynous,
-impressive,
-universal,
-off_the_shelf_looks,
 wealth,
 multimillionaire_level,
 status,
 personal_tech_level,
 point_value,
 available_points
+"""
+
+APPEARANCE_JOIN = "appearance on appearance.character_fk = character.id"
+APPEARANCE_COLUMNS = """
+appearance.id as appearance_id,
+appearance.appearance as appearance_appearance,
+appearance.description as appearance_description,
+appearance.androgynous as appearance_androgynous,
+appearance.impressive as appearance_impressive,
+appearance.universal as appearance_universal,
+appearance.off_the_shelf_looks as appearance_off_the_shelf_looks
 """
 
 LANGUAGE_JOIN = "language on language.character_fk = character.id"
@@ -81,18 +86,22 @@ rank.replaces_status as rank_replaces_status
 SELECT_ALL_CHARACTERS = """
 select 
     {CHARACTER_COLUMNS},
+    {APPEARANCE_COLUMNS},
     {LANGUAGE_COLUMNS},
     {REPUTATION_COLUMNS},
     {RANK_COLUMNS}
 from character
+join {APPEARANCE_JOIN}
 join {LANGUAGE_JOIN}
 join {REPUTATION_JOIN}
 join {RANK_JOIN}
 """.format(
     CHARACTER_COLUMNS = CHARACTER_COLUMNS,
+    APPEARANCE_COLUMNS = APPEARANCE_COLUMNS,
     LANGUAGE_COLUMNS = LANGUAGE_COLUMNS,
     REPUTATION_COLUMNS = REPUTATION_COLUMNS,
     RANK_COLUMNS = RANK_COLUMNS,
+    APPEARANCE_JOIN = APPEARANCE_JOIN,
     LANGUAGE_JOIN = LANGUAGE_JOIN,
     REPUTATION_JOIN = REPUTATION_JOIN,
     RANK_JOIN = RANK_JOIN)
@@ -127,8 +136,6 @@ def buildCharacter(characterData):
     character['player'] = d.get('player')
     character['height'] = d.get('height')
     character['weight'] = d.get('weight')
-    character['appearanceDescription'] = d.get('appearance_description')
-    character['appearance'] = d.get('appearance')
     character['build'] = d.get('build')
     character['size'] = d.get('size')
     character['st'] = d.get('st')
@@ -140,16 +147,21 @@ def buildCharacter(characterData):
     character['will'] = d.get('will')
     character['per'] = d.get('per')
     character['fp'] = d.get('fp')
-    character['androgynous'] = d.get('androgynous')
-    character['impressive'] = d.get('impressive')
-    character['universal'] = d.get('universal')
-    character['offTheShelfLooks'] = d.get('off_the_shelf_looks')
     character['wealth'] = d.get('wealth')
     character['multimillionaireLevel'] = d.get('multimillionaire_level')
     character['status'] = d.get('status')
     character['personalTechLevel'] = d.get('personal_tech_level')
     character['pointValue'] = d.get('point_value')
     character['availablePoints'] = d.get('available_points')
+    character['appearance'] = {
+        "id": d.get('appearance_id'),
+        "appearance": d.get('appearance_appearance'),
+        "description": d.get('appearance_description'),
+        "androgynous": d.get('appearance_androgynous'),
+        "impressive": d.get('appearance_impressive'),
+        "universal": d.get('appearance_universal'),
+        "offTheShelfLooks": d.get('appearance_off_the_shelf_looks')
+    }
     character['languages'] = []
     character['reputations'] = []
     character['ranks'] = []

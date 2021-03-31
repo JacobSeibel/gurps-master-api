@@ -204,35 +204,36 @@ def buildCharacter(characterData):
 
 @cross_origin()
 @app.route('/character')
+def allCharacters():
+    try:
+        cur.execute(SELECT_ALL_CHARACTERS)
+    except:
+        print("Can't select from character")
+
+    rows = cur.fetchall()
+    characterRows = dict()
+    for row in rows:
+        if row['id'] in characterRows.keys():
+            characterRows[row['id']].append(row)
+        else:
+            characterRows[row['id']] = [row]
+    characters = []
+    for key in characterRows.keys():
+        print(key)
+        characters.append(buildCharacter(characterRows[key]))
+    return {"characters": characters}
+
+@cross_origin()
 @app.route('/character/<id>')
-def character(id=None):
-    if id:
-        try:
-            cur.execute(SELECT_CHARACTER_BY_ID, id)
-        except:
-            print("Can't select from character")
+def character(id):
+    try:
+        cur.execute(SELECT_CHARACTER_BY_ID, id)
+    except:
+        print("Can't select from character")
 
-        result = cur.fetchall()
-        return buildCharacter(result)
-    else:
-        try:
-            cur.execute(SELECT_ALL_CHARACTERS)
-        except:
-            print("Can't select from character")
+    result = cur.fetchall()
+    return buildCharacter(result)
 
-        rows = cur.fetchall()
-        characterRows = dict()
-        for row in rows:
-            if row['id'] in characterRows.keys():
-                characterRows[row['id']].append(row)
-            else:
-                characterRows[row['id']] = [row]
-        characters = []
-        for key in characterRows.keys():
-            print(key)
-            characters.append(buildCharacter(characterRows[key]))
-        return {"characters": characters}
-        
 
 if __name__ == '__main__':
     # Threaded option to enable multiple instances for multiple user access support

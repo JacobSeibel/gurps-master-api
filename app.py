@@ -25,96 +25,6 @@ languageTable = Table('language', meta, autoload=True)
 reputationTable = Table('reputation', meta, autoload=True)
 rankTable = Table('rank', meta, autoload=True)
 
-# SQL Columns
-CHARACTER_COLUMNS = """
-character.id,
-character.name,
-player,
-height,
-weight,
-build,
-size,
-st,
-dx,
-iq,
-ht,
-basic_speed,
-hp,
-will,
-per,
-fp,
-wealth,
-multimillionaire_level,
-status,
-personal_tech_level,
-point_value,
-available_points
-"""
-
-APPEARANCE_JOIN = "appearance on appearance.character_fk = character.id"
-APPEARANCE_COLUMNS = """
-appearance.id as appearance_id,
-appearance.appearance as appearance_appearance,
-appearance.description as appearance_description,
-appearance.androgynous as appearance_androgynous,
-appearance.impressive as appearance_impressive,
-appearance.universal as appearance_universal,
-appearance.off_the_shelf_looks as appearance_off_the_shelf_looks
-"""
-
-LANGUAGE_JOIN = "language on language.character_fk = character.id"
-LANGUAGE_COLUMNS = """
-language.id as language_id,
-language.name as language_name,
-language.spoken_comprehension as language_spoken_comprehension,
-language.written_comprehension as language_written_comprehension
-"""
-
-REPUTATION_JOIN = "reputation on reputation.character_fk = character.id"
-REPUTATION_COLUMNS = """
-reputation.id as reputation_id,
-reputation.description as reputation_description,
-reputation.reaction as reputation_reaction,
-reputation.scope as reputation_scope,
-reputation.group as reputation_group,
-reputation.frequency as reputation_frequency,
-reputation.free as reputation_free
-"""
-
-RANK_JOIN = "rank on rank.character_fk = character.id"
-RANK_COLUMNS = """
-rank.id as rank_id,
-rank.organization as rank_organization,
-rank.rank as rank_rank,
-rank.description as rank_description,
-rank.replaces_status as rank_replaces_status
-"""
-
-# SQL Queries
-SELECT_ALL_CHARACTERS = """
-select 
-    {CHARACTER_COLUMNS},
-    {APPEARANCE_COLUMNS},
-    {LANGUAGE_COLUMNS},
-    {REPUTATION_COLUMNS},
-    {RANK_COLUMNS}
-from character
-join {APPEARANCE_JOIN}
-join {LANGUAGE_JOIN}
-join {REPUTATION_JOIN}
-join {RANK_JOIN}
-""".format(
-    CHARACTER_COLUMNS = CHARACTER_COLUMNS,
-    APPEARANCE_COLUMNS = APPEARANCE_COLUMNS,
-    LANGUAGE_COLUMNS = LANGUAGE_COLUMNS,
-    REPUTATION_COLUMNS = REPUTATION_COLUMNS,
-    RANK_COLUMNS = RANK_COLUMNS,
-    APPEARANCE_JOIN = APPEARANCE_JOIN,
-    LANGUAGE_JOIN = LANGUAGE_JOIN,
-    REPUTATION_JOIN = REPUTATION_JOIN,
-    RANK_JOIN = RANK_JOIN)
-SELECT_CHARACTER_BY_ID = SELECT_ALL_CHARACTERS + """ where character.id=%s"""
-
 def appendIfNotPresent(list, append):
     if append['id']:
         if list:
@@ -194,10 +104,7 @@ def buildCharacter(characterData):
             "replacesStatus": c.rank_replaces_status
         }
         character['ranks'] = appendIfNotPresent(character['ranks'], rank)
-        print(character)
     return character
-
-
 
 @cross_origin()
 @app.route('/character')
@@ -206,7 +113,6 @@ def allCharacters():
     try:
         j = characterTable.join(appearanceTable).join(languageTable).join(reputationTable).join(rankTable)
         stm = select([characterTable, appearanceTable, languageTable, reputationTable, rankTable]).select_from(j)
-        print(stm)
         rs = engine.connect().execute(stm)
     except:
         print("Can't select from character")
@@ -220,7 +126,6 @@ def allCharacters():
             characterRows[row['id']] = [row]
     characters = []
     for key in characterRows.keys():
-        print(key)
         characters.append(buildCharacter(characterRows[key]))
     return {"characters": characters}
 
@@ -446,7 +351,7 @@ def updateCharacter():
                         "group": reputation["group"],
                         "frequency": reputation["frequency"],
                         "free": reputation["free"],
-                        "character_fk": reputation["characterFk"]
+                        "character_fk": character["id"]
                     }
                 )
             )
@@ -522,6 +427,129 @@ def updateCharacter():
         print("Failed to update character")
     
     return {"Message": "Successfully updated character!"}
+
+@cross_origin()
+@app.route('/character', methods=['POST'])
+def insertCharacter():
+    character = request.json
+    # insert the character entry
+    try:
+        stm = (
+            insert(characterTable).
+            values(
+                {
+                    "name": character["name"],
+                    "player": character["player"],
+                    "height": character["height"],
+                    "weight": character["weight"],
+                    "build": character["build"],
+                    "size": character["size"],
+                    "st": character["st"],
+                    "dx": character["dx"],
+                    "iq": character["iq"],
+                    "ht": character["ht"],
+                    "basic_speed": character["basicSpeed"],
+                    "hp": character["hp"],
+                    "will": character["will"],
+                    "per": character["per"],
+                    "fp": character["fp"],
+                    "wealth": character["wealth"],
+                    "multimillionaire_level": character["multimillionaireLevel"],
+                    "status": character["status"],
+                    "personal_tech_level": character["personalTechLevel"],
+                    "point_value": character["pointValue"],
+                    "available_points": character["availablePoints"]
+                }
+            ).returning(
+                characterTable.c.id
+            )
+        )
+        rs = engine.connect().execute(stm)
+    except:
+        print("Failed to insert character")
+
+    character["id"] = rs.fetchone()["id"]
+    
+    # insert the appearance entry
+    try:
+        stm = (
+            insert(appearanceTable).
+            values(
+                {
+                    "appearance": character["appearance"]["appearance"],
+                    "description": character["appearance"]["description"],
+                    "androgynous": character["appearance"]["androgynous"],
+                    "impressive": character["appearance"]["impressive"],
+                    "universal": character["appearance"]["universal"],
+                    "off_the_shelf_looks": character["appearance"]["offTheShelfLooks"],
+                    "character_fk": character["id"]
+                }
+            )
+        )
+        engine.connect().execute(stm)
+    except:
+        print("Failed to insert appearance")
+
+    # insert languages
+    for language in character["languages"]:
+        try:
+            stm = (
+                insert(languageTable).
+                values(
+                    {
+                        "character_fk": character["id"],
+                        "name": language["name"],
+                        "spoken_comprehension": language["spokenComprehension"],
+                        "written_comprehension": language["writtenComprehension"]
+                    }
+                )
+            )
+            engine.connect().execute(stm)
+        except:
+            print("Failed to insert new language")
+
+    # insert ranks
+    for rank in character["ranks"]:
+        try:
+            stm = (
+                insert(rankTable).
+                values(
+                    {
+                        "organization": rank["organization"],
+                        "rank": rank["rank"],
+                        "description": rank["description"],
+                        "replaces_status": rank["replacesStatus"],
+                        "character_fk": character["id"]
+                    }
+                )
+            )
+            engine.connect().execute(stm)
+        except:
+            print("Failed to insert new rank")
+
+    # insert reputations
+    for reputation in character["reputations"]:
+        try:
+            stm = (
+                insert(reputationTable).
+                values(
+                    {
+                        "description": reputation["description"],
+                        "reaction": reputation["reaction"],
+                        "scope": reputation["scope"],
+                        "group": reputation["group"],
+                        "frequency": reputation["frequency"],
+                        "free": reputation["free"],
+                        "character_fk": character["id"]
+                    }
+                )
+            )
+            engine.connect().execute(stm)
+        except:
+            print("Failed to insert new reputation")
+    
+    return {"Message": "Successfully inserted character!"}
+
 
 if __name__ == '__main__':
     # Threaded option to enable multiple instances for multiple user access support

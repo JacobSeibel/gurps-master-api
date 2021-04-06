@@ -24,6 +24,13 @@ appearanceTable = Table('appearance', meta, autoload=True)
 languageTable = Table('language', meta, autoload=True)
 reputationTable = Table('reputation', meta, autoload=True)
 rankTable = Table('rank', meta, autoload=True)
+characterJoin = (
+    characterTable.
+    join(appearanceTable, isouter=True).
+    join(languageTable, isouter=True).
+    join(reputationTable, isouter=True).
+    join(rankTable, isouter=True)
+)
 
 def appendIfNotPresent(list, append):
     if append['id']:
@@ -111,8 +118,18 @@ def buildCharacter(characterData):
 def allCharacters():
     rs = None
     try:
-        j = characterTable.join(appearanceTable).join(languageTable).join(reputationTable).join(rankTable)
-        stm = select([characterTable, appearanceTable, languageTable, reputationTable, rankTable]).select_from(j)
+        stm = (
+            select(
+                [
+                    characterTable,
+                    appearanceTable,
+                    languageTable,
+                    reputationTable,
+                    rankTable
+                ]
+            ).
+            select_from(characterJoin)
+        )
         rs = engine.connect().execute(stm)
     except:
         print("Can't select from character")
@@ -133,8 +150,19 @@ def allCharacters():
 @app.route('/character/<id>')
 def character(id):
     try:
-        j = characterTable.join(appearanceTable).join(languageTable).join(reputationTable).join(rankTable)
-        stm = select([characterTable, appearanceTable, languageTable, reputationTable, rankTable]).select_from(j).where(characterTable.c.id == id)
+        stm = (
+            select(
+                [
+                    characterTable,
+                    appearanceTable,
+                    languageTable,
+                    reputationTable,
+                    rankTable
+                ]
+            ).
+            select_from(characterJoin).
+            where(characterTable.c.id == id)
+        )
         rs = engine.connect().execute(stm)
     except:
         print("Can't select from character")
